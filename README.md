@@ -1,44 +1,66 @@
-# PCA-Based Statistical Arbitrage: Baseline Model
+# PCA-Based Statistical Arbitrage: Cross-Sector Residual Mean Reversion
 
-A research notebook exploring **Principal Component Analysis (PCA)** as a tool for decomposing common-factor movements in financial return series and investigating a baseline statistical-arbitrage framework.
+A baseline statistical-arbitrage research notebook that uses **Principal Component Analysis (PCA)** to estimate common return factors across a multi-sector equity universe, then studies the residual component for mean-reversion opportunities.
 
-PCA transforms correlated variables into orthogonal components ordered by explained variance. In quantitative finance, this can help separate broad co-movement from residual movements that may be studied for potential relative-value relationships.
+The notebook's stated workflow is:
 
-## Research Objectives
+**Multi-sector stocks → PCA residuals → mean-reversion z-score → cross-sectional statistical arbitrage → out-of-sample backtest.**
 
-- Prepare a panel of asset returns.
-- Use PCA to identify dominant common components.
-- Examine variance explained by principal components.
-- Study residual or idiosyncratic movements after factor decomposition.
-- Establish a baseline for further statistical-arbitrage research.
+## Universe and Research Design
+
+- Historical sample: 2010-01-01 to 2021-01-01 (end date exclusive).
+- Universe: up to 44 equities across 11 sectors.
+- Chronological split: 90% training / 10% testing.
+- PCA factor count: 8.
+- Rolling z-score window: 60 observations.
+- Residual stationarity screen: Augmented Dickey–Fuller p-value threshold of 0.10.
+- Half-life screen: 2 to 120 observations.
+- Maximum tradable residual series: 20.
+- Entry z-score: 1.0.
+- Long/short selection: 3 names on each side.
+- Backtest transaction-cost assumption: 5 basis points.
+- Initial capital assumption: 100,000 (currency units are not specified in the notebook).
+
+The sector universe is defined directly in the notebook and includes Technology, Financials, Healthcare, Consumer Staples, Consumer Discretionary, Industrials, Energy, Communication Services, Utilities, Materials, and Real Estate.
+
+## Methodology
+
+1. Download adjusted historical prices and create daily returns.
+2. Split the return panel chronologically.
+3. Fit the scaler and PCA model on the training sample.
+4. Reconstruct common-factor returns and calculate residual returns.
+5. Screen candidate residuals using training-period ADF p-values and estimated half-life.
+6. Form rolling residual z-scores and cross-sectional long/short positions.
+7. Backtest the strategy using lagged holdings for P&L and an explicit turnover-based transaction-cost deduction.
+8. Evaluate the held-out period.
+
+## Implementation Details
+
+PCA is fitted on the training data only, then applied to the combined return sample using the fitted transformation. The backtest shifts holdings by one period before applying daily returns, which is intended to avoid using same-day signals for same-day P&L.
 
 ## Repository Contents
 
-- `BASELINE_PCA_STAT_ARB.ipynb` — main research notebook.
+- BASELINE_PCA_STAT_ARB.ipynb — main implementation.
 
-## Methodological Context
+## Technology
 
-PCA is a dimensionality-reduction method, not by itself a trading signal. A statistical-arbitrage strategy requires additional design choices, such as residual construction, signal standardisation, entry and exit rules, position sizing, risk controls, and realistic execution assumptions.
-
-Consult the notebook for the specific universe, sample period, PCA implementation, residual definition, and implemented strategy logic.
+Python · NumPy · pandas · yfinance · scikit-learn · statsmodels · Matplotlib
 
 ## Run
 
-```bash
-pip install numpy pandas scipy scikit-learn matplotlib seaborn statsmodels jupyter
+~~~bash
+pip install -r requirements.txt
 jupyter notebook
-```
+~~~
 
-Open `BASELINE_PCA_STAT_ARB.ipynb` and execute the notebook. Install any additional dependency used by the implementation if prompted.
+Open the notebook and run the cells in order. The notebook retrieves historical data at runtime.
 
-## Validation Priorities
+## Research Limitations
 
-A credible test should guard against look-ahead bias, use chronological or walk-forward evaluation, account for turnover and transaction costs, test parameter stability, and compare against appropriate baselines. Statistical significance and economic profitability are separate questions.
+The notebook's fixed historical ticker universe may introduce survivorship and look-ahead issues because it does not demonstrate point-in-time index membership or delisted-stock handling. The use of current ticker symbols across the full historical sample also needs survivorship-bias review. The backtest should be extended with walk-forward PCA refitting, liquidity constraints, borrow costs and short availability, corporate-action checks, turnover analysis, and multiple untouched test periods.
 
-## Project Status
-
-Baseline research implementation. Results should not be interpreted as evidence of a live or profitable arbitrage opportunity without further out-of-sample validation.
+No numerical performance claim is made here: the notebook's outputs are not retained as a stable, independently verified result set. Re-run the notebook and preserve dated metrics before reporting performance.
 
 ## Disclaimer
 
-For educational and research purposes only. Not investment advice.
+Research and educational use only. The baseline is not evidence of a persistent arbitrage opportunity and is not investment advice.
